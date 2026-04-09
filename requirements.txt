@@ -1,0 +1,21 @@
+# API & Monitoring
+fastapi
+uvicorn
+pydantic
+prometheus-fastapi-instrumentator
+
+# Machine Learning & Tracking
+mlflow
+pandas
+xgboost
+scikit-learn
+
+# Feature Store & Orchestration
+redis
+apache-airflow
+apache-airflow-providers-apache-spark
+
+# GenAI & RAG
+chromadb
+sentence-transformers
+requests

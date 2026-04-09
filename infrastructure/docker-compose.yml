@@ -1,0 +1,112 @@
+version: '3.8'
+
+services:
+  # --- FEATURE STORE ---
+  redis-feature-store:
+    image: redis:latest
+    container_name: redis-feature-store
+    ports:
+      - "6379:6379"
+    networks:
+      - mlops-network
+
+  # --- API SERVICE ---
+  fraud-api:
+    build: 
+      context: ..
+      dockerfile: Dockerfile
+    container_name: fraud-api
+    ports:
+      - "8000:8000"
+    environment:
+      - MLFLOW_TRACKING_URI=sqlite:////app/mlflow.db
+      - REDIS_HOST=redis-feature-store
+      - STAGING_TRAFFIC_RATIO=0.1
+    volumes:
+      - ..:/app
+    depends_on:
+      - redis-feature-store
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - mlops-network
+
+  # --- MONITORING ---
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - fraud-api
+    networks:
+      - mlops-network
+
+  # --- ORCHESTRATION DATABASE ---
+  postgres:
+    image: postgres:13
+    container_name: airflow-db
+    environment:
+      - POSTGRES_USER=airflow
+      - POSTGRES_PASSWORD=airflow
+      - POSTGRES_DB=airflow
+    networks:
+      - mlops-network
+
+  # --- AIRFLOW ---
+  airflow:
+    image: apache/airflow:2.7.1-python3.10
+    container_name: airflow-orchestrator
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+    volumes:
+      - ../dags:/opt/airflow/dags
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    command: standalone
+    networks:
+      - mlops-network
+
+  # --- BIG DATA (OFFICIAL SPARK) ---
+  spark-master:
+    image: apache/spark:3.5.1
+    container_name: spark-master
+    environment:
+      - SPARK_MODE=master
+      - SPARK_MASTER_WEBUI_PORT=8081
+      - MLFLOW_TRACKING_URI=sqlite:////app/mlflow.db
+    ports:
+      - "8081:8081"
+      - "7077:7077"
+    volumes:
+      - ..:/app
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master --webui-port 8081
+    networks:
+      - mlops-network
+
+  spark-worker:
+    image: apache/spark:3.5.1
+    container_name: spark-worker
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_WORKER_WEBUI_PORT=8082
+      - SPARK_WORKER_MEMORY=2G
+      - SPARK_WORKER_CORES=2
+    depends_on:
+      - spark-master
+    volumes:
+      - ..:/app
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077 --webui-port 8082
+    networks:
+      - mlops-network
+
+networks:
+  mlops-network:
+    driver: bridge

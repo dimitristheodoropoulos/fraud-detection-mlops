@@ -1,0 +1,53 @@
+.
+├── check_registry.py
+├── chroma_db
+│   ├── a7ce8549-b4ec-4b39-8641-32d15b4752e7
+│   │   ├── data_level0.bin
+│   │   ├── header.bin
+│   │   ├── length.bin
+│   │   └── link_lists.bin
+│   └── chroma.sqlite3
+├── data
+│   ├── ingest.py
+│   ├── processed_transactions.parquet
+│   │   ├── part-00000-7f39594b-08ba-409b-b5d9-2ee260955cbe-c000.snappy.parquet
+│   │   └── _SUCCESS
+│   ├── raw_transactions.csv
+│   └── validation.py
+├── Dockerfile
+├── features
+│   ├── offline_store.py
+│   └── online_store.py
+├── generate_data.py
+├── infrastructure
+│   ├── docker-compose.yml
+│   └── prometheus
+│       └── alert_rules.yml
+├── init_mlflow.py
+├── llm_agent
+│   ├── interpreter.py
+│   ├── prompt_template.py
+│   └── rag_service.py
+├── mlflow.db
+├── mlruns
+│   └── 0
+│       └── models
+├── orchestration
+│   └── dag.py
+├── project_structure.txt
+├── prometheus.yml
+├── README.md
+├── requirements.txt
+├── serving
+│   ├── api.py
+│   └── monitoring.py
+├── tests
+│   ├── integration
+│   └── unit
+│       └── test_api.py
+└── training
+    ├── dl_model.py
+    ├── evaluate.py
+    └── train.py
+
+18 directories, 33 files
